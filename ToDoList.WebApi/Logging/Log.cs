@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using NLog;
 
 namespace ToDoList.WebApi.Logging
 {
-    public class Log
+    public class Log: ILog
     {
         private static NLog.ILogger _logger = LogManager.GetCurrentClassLogger(); //Il permet d'utiliser les fonctionnalités de Nlog;
         public void Information(string msg){

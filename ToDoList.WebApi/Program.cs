@@ -1,6 +1,9 @@
 using System.Reflection;
 using Microsoft.OpenApi.Models;
 using NLog;
+using ToDoList.BusinessLogic.services.business;
+using ToDoList.BusinessLogic.services.Interface;
+using ToDoList.DataAccess.data;
 using ToDoList.WebApi.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,8 +13,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-// builder.Services.AddSingleton<ILog, Log>(); // Création du singleton de la class Log IPresenceService. IClasseService
+#region Ajout des services provenant du dossier Business
+builder.Services.AddSingleton<ILog, Log>(); // Création du singleton de la class Log IPresenceService. IClasseService
+builder.Services.AddScoped<ITaskListService, TaskListService>();
+#endregion
 
+
+//Ajout du dbContext de la base de données
+builder.Services.AddDbContext<ToDoListDbContext>();
 builder.Services.AddSwaggerGen(c =>
 {
     //Permet de faire la description de la doc
@@ -21,17 +30,9 @@ builder.Services.AddSwaggerGen(c =>
         Version = "1.0.0",
         Description = "Api pour la gestion des tàches à faire.",
     });
-    
-    //Inclusion des fichiers xml dans le contexte de l'application en swagger 
-    string NomFichier = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    string FichierXml = Path.Combine(AppContext.BaseDirectory, NomFichier);
-    c.IncludeXmlComments(FichierXml);
 });
 
 var app = builder.Build();
-
-string PathLog = $"{Directory.GetCurrentDirectory()}/bin/Debug/net7.0/NLog.config"; //Création du fichier de configuration pour les logs
-LogManager.LoadConfiguration(PathLog); //Chargement du chemin des logs.
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

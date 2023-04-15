@@ -13,9 +13,9 @@ namespace ToDoList.BusinessLogic.services.business
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<TaskListRedef>> FindTasks(CancellationToken cancellationToken)
+        public async Task<IEnumerable<TaskListRedef>> FindTasksAsync(CancellationToken cancellationToken)
         {
-            List<TaskListRedef>  tasks = (_dbContext.TaskList.Select(t=> new TaskListRedef(){
+            List<TaskListRedef> tasks = (_dbContext.TaskList.Select(t=> new TaskListRedef(){
                 Identifiant = t.Identifiant,
                 Titre = t.Titre,
                 Description = t.Description,
@@ -23,17 +23,24 @@ namespace ToDoList.BusinessLogic.services.business
             })).ToList();
             return tasks;
         }
-        public async Task<TaskListRedef?> FindTaskById(int id, CancellationToken cancellationToken)
+        public async Task<IEnumerable<TaskListRedef>?> FindTaskPaginationAsync(int pageNumber, int pageSize, CancellationToken cancellationToken)
         {
-            TaskListRedef?  task = _dbContext.TaskList.Where(t=>t.Identifiant == id).Select(t=> new TaskListRedef(){
-                Identifiant = t.Identifiant,
-                Titre = t.Titre,
-                Description = t.Description,
-                Statut = t.Statut
-            }).FirstOrDefault();
-            return task;
+            //pageNumber permet de déterminer le numéro de page actuel 
+            //pageSize permet de déterminer le nombre d'enregistrements à récupérer.
+            List<TaskListRedef> tasks = _dbContext.TaskList
+                                        .Skip((pageNumber - 1) * pageSize)
+                                        .Take(pageSize)
+                                        .Select(
+                                            t=> new TaskListRedef(){
+                                            Identifiant = t.Identifiant,
+                                            Titre = t.Titre,
+                                            Description = t.Description,
+                                            Statut = t.Statut
+                                        })
+                                        .ToList();
+            return tasks;
         }
-        public async Task<Boolean> StoreTask(TaskListRedef data, CancellationToken cancellationToken)
+        public async Task<Boolean> StoreTaskAsync(TaskListRedef data, CancellationToken cancellationToken)
         {
             if(data!=null)
             {
@@ -48,7 +55,8 @@ namespace ToDoList.BusinessLogic.services.business
                 {
                     return true;
                 }
-                else{
+                else
+                {
                     return false;
                 }
             }
@@ -57,28 +65,32 @@ namespace ToDoList.BusinessLogic.services.business
                 return false;
             }
         }
-        public async Task<Boolean> ModifyTask(TaskListRedef data, CancellationToken cancellationToken)
+        public async Task<TaskList?> ModifyTaskAsync(TaskListRedef data, CancellationToken cancellationToken)
         {
             TaskList? task = await _dbContext.TaskList.FindAsync(data.Identifiant);
-            if(task != null)
-            {
-                task.Identifiant = data.Identifiant;
-                task.Titre = data.Titre;
-                task.Description = data.Description;
-                task.Statut = data.Statut;
-                var result = _dbContext.Update<TaskList>(task);
-                if(await _dbContext.SaveChangesAsync(cancellationToken) > 0)
+            if(data!=null){
+                if(task != null)
                 {
-                    return true;
+                    task.Identifiant = data.Identifiant;
+                    task.Titre = data.Titre;
+                    task.Description = data.Description;
+                    task.Statut = data.Statut;
+                    var result = _dbContext.Update<TaskList>(task);
+                    if(await _dbContext.SaveChangesAsync(cancellationToken) > 0)
+                    {
+                        return result.Entity;
+                    }
+                    else
+                    {
+                        return result.Entity;
+                    }
                 }
-                else
-                {
-                    return false;
-                }
+                return null;
+            }else{
+                return null;
             }
-            return false;
         }
-        public async Task<Boolean> DeleteTask(int id, CancellationToken cancellationToken)
+        public async Task<Boolean> DeleteTaskAsync(int id, CancellationToken cancellationToken)
         {
             TaskList? result = await _dbContext.TaskList.FindAsync(id);
             if(result!=null)
@@ -88,7 +100,9 @@ namespace ToDoList.BusinessLogic.services.business
                 {
                     await _dbContext.SaveChangesAsync();
                     return true;
-                }else{
+                }
+                else
+                {
                     return false;
                 }
             }
